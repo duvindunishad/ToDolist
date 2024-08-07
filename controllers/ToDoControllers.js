@@ -1,48 +1,55 @@
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
-//connect database
-mongoose.connect('mongodb+srv://nishad:1997Nishad@cluster0.zuj8p.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
+// Connect to the database
+mongoose.connect('mongodb+srv://nishadkarunasingha:nishad97@cluster0.hqaseoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+    .then(() => console.log('Database connected successfully'))
+    .catch(err => console.error('Database connection error:', err));
 
-//create a schema 
 // Define the schema
 const todoSchema = new mongoose.Schema({
     item: String
-  });
-  
-  // Create the model
-  const Todo = mongoose.model('Todo', todoSchema);
-  
-  // Async function to create and save a new item
-  async function saveItem() {
-    const itemOne = new Todo({ item: 'buy flower' });
-  
-    try {
-      await itemOne.save();
-      console.log('item saved');
-    } catch (err) {
-      console.error(err);
-    }
-  }
-  
-  // Call the async function to save the item
-  saveItem();
+});
 
-var data = [{item: 'get milk'}, {item: 'walk dog'}, {item: 'kick some coding'}]
-var urlencodedParser = bodyParser.urlencoded({extended: false});
-module.exports = function(app){
+// Create the model
+const Todo = mongoose.model('Todo', todoSchema);
 
-    app.get('/todo', function(req, res){
-        res.render('todo', {todos: data});
+const urlencodedParser = bodyParser.urlencoded({ extended: false });
+
+module.exports = function(app) {
+
+    app.get('/todo', async function(req, res) {
+        try {
+            // Get data from MongoDB
+            const data = await Todo.find({});
+            res.render('todo', { todos: data });
+        } catch (err) {
+            res.status(500).send(err);
+        }
     });
-    app.post('/todo',urlencodedParser, function(req, res){
-        data.push(req.body);
-        res.json(data);
+
+    app.post('/todo', urlencodedParser, async function(req, res) {
+        try {
+            // Get data from the view and add it to MongoDB
+            const newTodo = new Todo({
+                item: req.body.item
+            });
+
+            const data = await newTodo.save();
+            res.json(data);
+        } catch (err) {
+            res.status(500).send(err);
+        }
     });
-    app.delete('/todo/:item', function(req, res){
-        data = data.filter(function(todo){
-            return todo.item.replace(/ /g, '-') !== req.params.item;
-        });
-        res.json(data);
+
+    //have to ann "async" because of the latest updates
+    app.delete('/todo/:item', async function(req, res) {
+        try {
+            // Delete the requested item from MongoDB
+            const data = await Todo.deleteOne({ item: req.params.item.replace(/\-/g, " ") });
+            res.json(data);
+        } catch (err) {
+            res.status(500).send(err);
+        }
     });
 };
