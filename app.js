@@ -15,4 +15,4 @@ ToDoController(app);
 
 //listen to ports
 app.listen(3000);
-console.log('You are listening on port 3000');
+console.log('You are listening on port Server running at http://localhost:3000/todo');
